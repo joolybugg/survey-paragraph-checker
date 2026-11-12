@@ -1,0 +1,19 @@
+# Never commit real survey reports or their output (client data)
+*.pdf
+*.PDF
+*_fixed_comments.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Environments and IDEs
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store

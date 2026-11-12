@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "survey-paragraph-checker"
+version = "1.0.0"
+description = "Flag survey PDF comments written as more than one paragraph and produce one-paragraph versions."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Julianne Keaster" }]
+dependencies = ["pymupdf>=1.24"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Text Processing",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "reportlab>=4"]
+
+[project.scripts]
+paragraph-check = "section_paragraph_checker:main"
+
+[tool.setuptools]
+py-modules = ["section_paragraph_checker"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
