@@ -4,9 +4,9 @@ section_paragraph_checker.py
 
 QC check for PDF mystery-shop survey reports: every "Comments" answer must be
 written as ONE paragraph. For each Comments field the script reports how many
-paragraphs it found, and for any field with more than one it writes the text
-merged into a single paragraph to <report>_fixed_comments.txt, ready to paste
-back into the survey.
+paragraphs it found, flags any with more than one, and writes EVERY comment as
+a single paragraph to <report>_fixed_comments.txt (merged ones are marked), so
+all the comment text can be edited in one document and pasted back.
 
 PDFs don't store paragraphs, only positioned lines of text, so breaks are
 inferred from layout. A new paragraph is counted when a line:
@@ -315,6 +315,27 @@ def analyze_pdf(path, label_rx: re.Pattern | None = None) -> tuple[list[Comment]
     return comments, pitch
 
 
+def write_comments_file(path: Path, comments: list[Comment]) -> Path:
+    """Write every non-blank comment, in report order, as one paragraph each.
+
+    Each comment's header says whether it was merged from several paragraphs
+    (check the flow) or was already a single paragraph (text unchanged)."""
+    merged_count = sum(c.violates for c in comments)
+    out = path.with_name(f"{path.stem}_fixed_comments.txt")
+    with out.open("w", encoding="utf-8") as fh:
+        fh.write(f"All comments from {path.name}, each as one paragraph\n")
+        fh.write(f"{len(comments)} comment(s); {merged_count} merged from multiple paragraphs.\n")
+        fh.write("Edit freely here, then paste each one over the original comment in the survey.\n")
+        fh.write("For MERGED comments: where a new paragraph used to begin, a transition word\n")
+        fh.write("may help the sentences flow together.\n")
+        for c in comments:
+            status = (f"MERGED from {len(c.paragraphs)} paragraphs - check the flow"
+                      if c.violates else "already one paragraph - unchanged")
+            fh.write(f"\n{'=' * 70}\n{c.label}  (page {c.page})\n{status}\n{'=' * 70}\n")
+            fh.write(merged_text(c) + "\n")
+    return out
+
+
 def check_file(path: Path, args, label_rx: re.Pattern) -> int:
     print(f"\n{path.name}")
     print("-" * min(80, max(20, len(path.name))))
@@ -343,18 +364,9 @@ def check_file(path: Path, args, label_rx: re.Pattern) -> int:
     print(f"\n  {len(filled)} comment(s) checked, {len(violations)} with multiple paragraphs"
           + (f" ({blank} blank comment field(s) skipped)." if blank else "."))
 
-    if violations:
-        out = path.with_name(f"{path.stem}_fixed_comments.txt")
-        with out.open("w", encoding="utf-8") as fh:
-            fh.write(f"One-paragraph versions of comments from {path.name}\n")
-            fh.write("Paste each one over the original comment in the survey.\n")
-            fh.write("Read each one before pasting: where a new paragraph used to begin, a\n")
-            fh.write("transition word may help the sentences flow together.\n")
-            for c in violations:
-                fh.write(f"\n{'=' * 70}\n{c.label}  (page {c.page}, was "
-                         f"{len(c.paragraphs)} paragraphs)\n{'=' * 70}\n")
-                fh.write(merged_text(c) + "\n")
-        print(f"  One-paragraph versions saved to: {out}")
+    if filled:
+        out = write_comments_file(path, filled)
+        print(f"  All {len(filled)} comment(s) saved as single paragraphs to: {out}")
     if args.debug:
         print(f"  (normal line spacing in comments: {pitch:.1f}pt)")
     return len(violations)

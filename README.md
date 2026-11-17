@@ -2,8 +2,9 @@
 
 A quality-control tool for PDF survey reports whose style guide requires every
 free-text **Comments** answer to be written as a single paragraph. It flags any
-comment that was split into multiple paragraphs and writes a one-paragraph
-version of each one, ready to paste back into the survey system.
+comment that was split into multiple paragraphs and writes every comment, as a
+single paragraph, to one text file. You can edit all the comment text in one
+place, then paste it back into the survey system.
 
 Built for mystery-shop evaluation reports, where each section ends with a
 narrative comments field (for example, "Cage Cashier Comments:") surrounded by
@@ -32,9 +33,28 @@ page layout directly to make that call.
    - **an indented first line**, or
    - **a hard line break**: the previous line stopped short even though this
      line's first word would have fit, which happens when someone presses Enter.
-4. **Reports and fixes.** Each comment is marked `ok` or `FAIL`. Failures are
-   rejoined into one paragraph, rejoining hyphenated words split across lines,
-   and saved to `<report>_fixed_comments.txt`.
+4. **Reports and fixes.** Each comment is marked `ok` or `FAIL`. Every
+   non-blank comment is then written, in report order, to
+   `<report>_fixed_comments.txt`. Failures are rejoined into one paragraph
+   (hyphenated words split across lines are rejoined too) and marked
+   **MERGED**. Comments that already pass are included unchanged, so the whole
+   report's comment text can be edited in a single document.
+
+### Example comments file
+
+```
+======================================================================
+Rewards Club Comments  (page 3)
+MERGED from 3 paragraphs - check the flow
+======================================================================
+At approximately 3:31 PM, I approached the Rewards Club desk and was greeted…
+
+======================================================================
+Swing Shift - Slot Comments  (page 4)
+already one paragraph - unchanged
+======================================================================
+Upon entering the slot floor, I observed…
+```
 
 ## Installation
 
@@ -79,7 +99,7 @@ evaluation_1234567.pdf
            2. p.15: Although the issue was handled professionally, no manager …   <- line break (previous line ended early)
 
   3 comment(s) checked, 2 with multiple paragraphs.
-  One-paragraph versions saved to: evaluation_1234567_fixed_comments.txt
+  All 3 comment(s) saved as single paragraphs to: evaluation_1234567_fixed_comments.txt
 ```
 
 Exit codes: `0` all comments pass, `1` at least one comment has multiple

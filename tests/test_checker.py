@@ -142,14 +142,31 @@ def test_cli_exit_codes_and_fixed_file(tmp_path, capsys):
                                   [(SENTENCES, BODY), (OTHER, BODY_GAP)]), "bad.pdf")
 
     assert spc.main([str(good)]) == 0
-    assert not (tmp_path / "good_fixed_comments.txt").exists()
+    good_txt = (tmp_path / "good_fixed_comments.txt").read_text()
+    assert "Slot Comments" in good_txt and "already one paragraph - unchanged" in good_txt
 
     assert spc.main([str(bad)]) == 1
     fixed = (tmp_path / "bad_fixed_comments.txt").read_text()
-    assert "Cage Comments" in fixed and "was 2 paragraphs" in fixed
+    assert "Cage Comments" in fixed and "MERGED from 2 paragraphs" in fixed
 
     assert spc.main([str(tmp_path / "missing.pdf")]) == 2
     assert "FAIL" in capsys.readouterr().out
+
+
+def test_comments_file_lists_every_comment_in_order(tmp_path):
+    story = section("SLOTS", "Slot Comments:", [(SENTENCES, BODY)])
+    story += section("CAGE", "Cage Comments:", [(SENTENCES, BODY), (OTHER, BODY_GAP)])
+    story += [Paragraph("ROAMING SECURITY", HEADING), Paragraph("Roaming Comments:", LABEL)]
+    path = build(tmp_path, story)
+    spc.main([str(path)])
+    text = (tmp_path / "report_fixed_comments.txt").read_text()
+
+    assert text.index("Slot Comments") < text.index("Cage Comments")  # report order
+    assert "Roaming Comments" not in text                               # blank skipped
+    assert "2 comment(s); 1 merged" in text
+    # Layout: "Slot Comments (page 1)\n<status>\n=====\n<body>\n\n=====\nCage Comments..."
+    slot_body = text.split("Slot Comments")[1].split("=" * 70)[1].strip()
+    assert slot_body.split() == SENTENCES.split()                       # text unchanged
 
 
 def test_custom_label(tmp_path):
